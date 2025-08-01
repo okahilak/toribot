@@ -16,19 +16,19 @@ class ToriScraper {
         this.db = new Database();
     }
 
-    async fetchSearchResults(searchQuery = '', productCategory = '') {
+    async fetchSearchResults(searchQuery = null, productCategory = null) {
         const params = new URLSearchParams({
             trade_type: '1' // Always filter for selling listings
         });
 
-        // Add search query if provided
-        if (searchQuery) {
-            params.append('q', searchQuery);
+        // Add search query only if explicitly provided (not null or empty string)
+        if (searchQuery?.trim()) {
+            params.append('q', searchQuery.trim());
         }
 
-        // Add product category if provided
-        if (productCategory) {
-            params.append('product_category', productCategory);
+        // Add product category only if explicitly provided (not null or empty string)
+        if (productCategory?.trim()) {
+            params.append('product_category', productCategory.trim());
         }
 
         const url = `https://www.tori.fi/recommerce/forsale/search?${params.toString()}`;
@@ -136,9 +136,9 @@ class ToriScraper {
         }
     }
 
-    async main(searchQuery = '', productCategory = '') {
-        if (!searchQuery && !productCategory) {
-            throw new Error('Either searchQuery or productCategory must be provided');
+    async main(searchQuery = null, productCategory = null) {
+        if (!searchQuery?.trim() && !productCategory?.trim()) {
+            throw new Error('Either TORI_SEARCH_QUERY or TORI_PRODUCT_CATEGORY must be provided in environment variables');
         }
 
         await this.db.init();
@@ -233,8 +233,8 @@ class ToriScraper {
 // If running directly (not imported as a module)
 if (require.main === module) {
     const scraper = new ToriScraper();
-    const searchQuery = process.env.TORI_SEARCH_QUERY || '';
-    const productCategory = process.env.TORI_PRODUCT_CATEGORY || '2.93.3215.43'; // Default to laptops category
+    const searchQuery = process.env.TORI_SEARCH_QUERY || null;
+    const productCategory = process.env.TORI_PRODUCT_CATEGORY || null;
     
     scraper.main(searchQuery, productCategory)
         .then(() => process.exit(0))
