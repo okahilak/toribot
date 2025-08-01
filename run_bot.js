@@ -4,15 +4,22 @@ const DealEvaluator = require('./deal_evaluator.js');
 const WebGenerator = require('./web_generator.js');
 
 async function main() {
-    const searchQuery = process.env.TORI_SEARCH_QUERY || 'macbook pro';
+    const searchQuery = process.env.TORI_SEARCH_QUERY || null;
+    const productCategory = process.env.TORI_PRODUCT_CATEGORY || null;
+
     console.log('🤖 ToriBot starting...');
-    console.log(`🔍 Search query: "${searchQuery}"`);
+    if (searchQuery) {
+        console.log(`🔍 Search query: "${searchQuery}"`);
+    }
+    if (productCategory) {
+        console.log(`📁 Category: "${productCategory}"`);
+    }
 
     try {
         // 1. Scrape new listings
         console.log('\n📥 Fetching listings...');
         const scraper = new ToriScraper();
-        await scraper.main(searchQuery);
+        await scraper.main(searchQuery, productCategory);
 
         // 2. Evaluate new listings
         console.log('\n📊 Evaluating listings...');

@@ -144,12 +144,15 @@ Focus on:
         }
     }
 
-    async evaluateTopListing(searchQuery) {
+    async evaluateTopListing(searchQuery = null) {
         await this.db.init();
 
         try {
+            // Use a descriptive name for null search query
+            const searchName = searchQuery || 'Category-based search';
+            
             // Get the search ID
-            const searchId = await this.db.addSearch(searchQuery);
+            const searchId = await this.db.addSearch(searchName);
             
             // Get all listings for this search, ordered by first_seen DESC
             const listings = await this.db.getListingsBySearch(searchId);
