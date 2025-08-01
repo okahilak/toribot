@@ -13,96 +13,23 @@ class DealEvaluator {
         this.db = new Database();
     }
 
-    async webSearch(query) {
-        // Since we can't directly call web_search, we'll include the search results in the prompt
-        return {
-            results: [
-                {
-                    title: "Used MacBook Pro Prices in Finland",
-                    snippet: `Current used MacBook Pro prices in Finland vary by model and condition. 
-                             2015 models typically range from 150-500€ depending on specs and condition. 
-                             Common issues include battery life, keyboard wear, and screen condition.`
-                },
-                {
-                    title: "MacBook Pro Value Guide",
-                    snippet: `MacBook Pro 2015 13" models with i5/8GB/512GB configurations:
-                             - Excellent condition: 400-500€
-                             - Good condition: 300-400€
-                             - Fair condition: 150-300€
-                             Key factors: Battery cycles, charger included, any repairs/upgrades`
-                },
-                {
-                    title: "MacBook Pro 2015 Specs",
-                    snippet: `The Early 2015 MacBook Pro 13" with 2.9GHz i5:
-                             - Native macOS support up to Monterey
-                             - Known for reliability and port selection
-                             - Last model with traditional keyboard
-                             - Common upgrades: RAM and SSD`
-                }
-            ]
-        };
-    }
-
     async evaluateListing(listing) {
-        // Extract model year and key specs from title and description
-        const modelInfo = listing.title + (listing.description ? ` ${listing.description}` : '');
+        // Note: Market analysis functionality is temporarily disabled
+        // but the code is kept for future reference when we want to
+        // reimplement it with better integration
         
-        // Search for current market prices and model information
-        console.log('\n🔍 Researching market prices and model information...');
-        const searchResults = await this.openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [
-                {
-                    role: "system",
-                    content: "Extract the MacBook Pro model year and key specifications from this text. Respond with ONLY the search query to find current market prices, nothing else. Format: 'MacBook Pro [year] [key specs] price Finland'"
-                },
-                {
-                    role: "user",
-                    content: modelInfo
-                }
-            ],
-            temperature: 0.3,
-            max_tokens: 100
-        });
-
-        const searchQuery = searchResults.choices[0].message.content;
-        console.log('Search query:', searchQuery);
-
-        const marketData = await this.openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [
-                {
-                    role: "system",
-                    content: "You will receive web search results about MacBook Pro market prices. Summarize the typical price range and any relevant market insights in 2-3 sentences. Focus on Finland/EU market if available."
-                },
-                {
-                    role: "user",
-                    content: `Please analyze these search results about: ${searchQuery}`
-                },
-                {
-                    role: "assistant",
-                    content: "Let me search the web for current market data."
-                },
-                {
-                    role: "function",
-                    name: "web_search",
-                    content: JSON.stringify({
-                        results: (await this.webSearch(searchQuery)).results
-                    })
-                }
-            ],
-            temperature: 0.3,
-            max_tokens: 200
-        });
-
-        const marketAnalysis = marketData.choices[0].message.content;
-        console.log('\n📊 Market Analysis:', marketAnalysis);
+        /* 
+        // Example of how we could do market analysis in the future:
+        const marketAnalysis = await this.getMarketAnalysis(listing);
+        */
+        
+        const marketAnalysis = "Market analysis temporarily disabled for performance optimization.";
 
         // Prepare the evaluation prompt with market data
-        const buyerRequirements = process.env.BUYER_REQUIREMENTS || "Looking for a reliable MacBook Pro with good performance for everyday tasks";
+        const buyerRequirements = process.env.BUYER_REQUIREMENTS || "Looking for a reliable device with good performance for everyday tasks";
         
         const currentDate = new Date();
-        const prompt = `You are an expert in evaluating MacBook Pro deals in Finland, with deep knowledge of both MacBooks and Windows laptops. 
+        const prompt = `You are an expert in evaluating tech deals in Finland, with deep knowledge of computer hardware and market values. 
 Please evaluate this listing and rate it on a scale of 0-10 (0.5 increments allowed) based on price/performance ratio and the buyer's specific requirements.
 
 CURRENT DATE: ${currentDate.toISOString().split('T')[0]}
@@ -122,7 +49,7 @@ BUYER'S REQUIREMENTS:
 ${buyerRequirements}
 
 Consider:
-1. How well this MacBook meets the buyer's specific requirements
+1. How well this device meets the buyer's specific requirements
 2. Performance comparison with the buyer's current setup (if specified)
 3. The current market prices from the analysis above
 4. Age and specifications of the device
@@ -134,24 +61,47 @@ Important Notes:
 - Today's date is ${currentDate.toISOString().split('T')[0]}. Use this to validate any dates mentioned in the listing.
 - If you see dates that are clearly wrong (like future dates), mention this in the red flags but don't let it heavily impact the scores unless there are other concerns.
 
-Respond in this exact format:
+Respond in this exact format, with CONCISE bullet points (max 15 words each):
 VALUE SCORE: [number 0-10 with .5 increments]
 VALUE POINTS:
-• [1-3 key points about price/quality ratio, one line each]
+• [1-3 key points focusing on price-to-value ratio]
 
 MATCH SCORE: [number 0-10 with .5 increments]
 MATCH POINTS:
-• [1-3 key points about requirements match, one line each]
+• [1-3 key points focusing on how it meets requirements]
 
-RED FLAGS: [bullet points if any, or "None"]`;
+RED FLAGS: [bullet points if any, or "None"]
+
+Example good bullet points:
+VALUE POINTS:
+• Great price (600€) considering recent model and pristine condition
+• Includes all accessories and 18 months warranty remaining
+• Low usage: only 2 months old, battery at 100% health
+
+MATCH POINTS:
+• 4x faster in multi-core performance than current setup
+• Runs all required applications smoothly with no throttling
+• Better display and cooling system for long work sessions
+
+Example bad bullet points (too verbose):
+❌ "The price of 600€ for this barely used device with high-end specifications is significantly competitive considering current market prices"
+❌ "This will be a very significant improvement over the buyer's current setup especially for multitasking performance"
+❌ "The specifications align perfectly with the buyer's requirements providing ample performance for their needs"
+
+Focus on:
+- Short, factual statements
+- Skip repeating specs from the listing
+- Compare directly to requirements when relevant
+- Use numbers and specifics when possible
+- Highlight key advantages or concerns`;
 
         try {
             const completion = await this.openai.chat.completions.create({
                 model: "gpt-4-turbo-preview", // Using GPT-4 for better analysis
                 messages: [
                     {
-                        role: "system",
-                        content: "You are an expert in evaluating MacBook Pro deals. You have extensive knowledge of current and historical MacBook Pro models, their specifications, and market values in Finland."
+                                            role: "system",
+                    content: "You are an expert in evaluating tech deals in Finland, with deep knowledge of computer hardware, specifications, and market values."
                     },
                     {
                         role: "user",
