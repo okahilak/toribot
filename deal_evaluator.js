@@ -242,7 +242,7 @@ Focus on:
 
 // If running directly (not imported as a module)
 if (require.main === module) {
-    const searchQuery = process.env.TORI_SEARCH_QUERY || 'macbook pro';
+    const searchQuery = process.env.TORI_SEARCH_QUERY;
     const evaluator = new DealEvaluator();
     evaluator.evaluateTopListing(searchQuery)
         .then(() => process.exit(0))

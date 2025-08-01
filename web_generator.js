@@ -29,7 +29,7 @@ class WebGenerator {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToriBot - MacBook Deals</title>
+    <title>ToriBot deals</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -123,7 +123,7 @@ class WebGenerator {
 </head>
 <body>
     <div class="header">
-        <h1>ToriBot - MacBook Deals</h1>
+        <h1>ToriBot deals</h1>
         <div class="requirements">
             <h3>Current Requirements:</h3>
             <p>${process.env.BUYER_REQUIREMENTS || 'No specific requirements set'}</p>
