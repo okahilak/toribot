@@ -24,7 +24,8 @@ async function main() {
         // 2. Evaluate new listings
         console.log('\n📊 Evaluating listings...');
         const evaluator = new DealEvaluator();
-        await evaluator.evaluateTopListing(searchQuery);
+        const searchName = searchQuery || 'Category-based search';
+        await evaluator.evaluateTopListing(searchName);
 
         // 3. Generate website
         console.log('\n🌐 Generating website...');
