@@ -64,10 +64,21 @@ class WebGenerator {
         }
         .points {
             margin-top: 10px;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
         }
         .point {
-            margin: 5px 0;
-            line-height: 1.4;
+            margin: 8px 0;
+            line-height: 1.5;
+            font-size: 0.95em;
+            color: #2d2d2d;
+        }
+        .point:first-child {
+            margin-top: 0;
+        }
+        .point:last-child {
+            margin-bottom: 0;
         }
         .red-flags {
             color: #dc3545;
@@ -132,28 +143,26 @@ class WebGenerator {
                             <div>Value Score</div>
                             <div class="score-value">${listing.evaluation.value_score}/10</div>
                             <div class="points">
-                                ${JSON.parse(listing.evaluation.value_points || '[]')
-                                    .map(point => `<div class="point">• ${point.replace(/^•\s*/, '')}</div>`)
-                                    .join('')}
+                                ${listing.evaluation.value_points.map(point => 
+                                    `<div class="point">${point.startsWith('•') ? point : '• ' + point}</div>`
+                                ).join('')}
                             </div>
                         </div>
                         <div class="score">
                             <div>Match Score</div>
                             <div class="score-value">${listing.evaluation.match_score}/10</div>
                             <div class="points">
-                                ${JSON.parse(listing.evaluation.match_points || '[]')
-                                    .map(point => `<div class="point">• ${point.replace(/^•\s*/, '')}</div>`)
-                                    .join('')}
+                                ${listing.evaluation.match_points.map(point => 
+                                    `<div class="point">${point.startsWith('•') ? point : '• ' + point}</div>`
+                                ).join('')}
                             </div>
                         </div>
                     </div>
                     ${listing.evaluation.red_flags && listing.evaluation.red_flags !== 'None' 
                         ? `<div class="red-flags">
-                            ${listing.evaluation.red_flags.includes('\n')
-                                ? listing.evaluation.red_flags.split('\n')
-                                    .map(flag => `<div class="point">⚠️ ${flag.replace(/^[•⚠️]\s*/, '')}</div>`)
-                                    .join('')
-                                : `<div class="point">⚠️ ${listing.evaluation.red_flags}</div>`}
+                            ${listing.evaluation.red_flags.split('\n').map(flag => 
+                                `<div class="point">⚠️ ${flag.replace(/^[•⚠️]\s*/, '')}</div>`
+                            ).join('')}
                            </div>` 
                         : ''}
                 <div class="meta">
@@ -229,6 +238,16 @@ class WebGenerator {
                     }
 
                     if (row.listing_id) {
+                        // Parse JSON arrays from database
+                        let valuePoints = [];
+                        let matchPoints = [];
+                        try {
+                            valuePoints = JSON.parse(row.value_points || '[]');
+                            matchPoints = JSON.parse(row.match_points || '[]');
+                        } catch (e) {
+                            console.error('Error parsing points:', e);
+                        }
+
                         currentSearch.listings.push({
                             id: row.listing_id,
                             title: row.title,
@@ -241,9 +260,9 @@ class WebGenerator {
                             description: row.description,
                             evaluation: {
                                 value_score: row.value_score,
-                                value_reasoning: row.value_reasoning,
+                                value_points: valuePoints,
                                 match_score: row.match_score,
-                                match_reasoning: row.match_reasoning,
+                                match_points: matchPoints,
                                 red_flags: row.red_flags,
                                 evaluated_at: row.evaluated_at
                             }
