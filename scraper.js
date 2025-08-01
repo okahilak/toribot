@@ -144,8 +144,11 @@ class ToriScraper {
         await this.db.init();
 
         try {
-            // Use product category as search name if no query provided
-            const searchName = searchQuery || `Category: ${productCategory}`;
+            // Create a consistent search name
+            const searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
+            if (!searchName) {
+                throw new Error('No search query or category provided');
+            }
             
             // Get search ID first
             const searchId = await this.db.addSearch(searchName);

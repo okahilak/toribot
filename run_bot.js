@@ -24,7 +24,7 @@ async function main() {
         // 2. Evaluate new listings
         console.log('\n📊 Evaluating listings...');
         const evaluator = new DealEvaluator();
-        const searchName = searchQuery || 'Category-based search';
+        const searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
         await evaluator.evaluateTopListing(searchName);
 
         // 3. Generate website
