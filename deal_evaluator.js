@@ -64,7 +64,7 @@ Important Notes:
 Respond in this exact format, with CONCISE bullet points (max 15 words each):
 VALUE SCORE: [number 0-10 with .5 increments]
 VALUE POINTS:
-• [1-3 key points focusing on price-to-value ratio]
+• [1-3 key points focusing on price/quality ratio]
 
 MATCH SCORE: [number 0-10 with .5 increments]
 MATCH POINTS:
@@ -100,8 +100,8 @@ Focus on:
                 model: "gpt-4-turbo-preview", // Using GPT-4 for better analysis
                 messages: [
                     {
-                                            role: "system",
-                    content: "You are an expert in evaluating tech deals in Finland, with deep knowledge of computer hardware, specifications, and market values."
+                        role: "system",
+                        content: "You are an expert in evaluating tech deals in Finland, with deep knowledge of computer hardware, specifications, and market values."
                     },
                     {
                         role: "user",
@@ -116,17 +116,13 @@ Focus on:
             
             // Parse the response
             const valueScoreMatch = response.match(/VALUE SCORE:\s*(\d+\.?\d*)/);
-            // Extract value points (all lines starting with • between VALUE POINTS: and MATCH SCORE:)
             const valuePointsMatch = response.match(/VALUE POINTS:\n((?:•[^\n]+\n?)+)/);
             const valuePoints = valuePointsMatch ? valuePointsMatch[1].trim().split('\n').map(p => p.trim()) : [];
 
             const matchScoreMatch = response.match(/MATCH SCORE:\s*(\d+\.?\d*)/);
-            
-            // Extract match points (all lines starting with • between MATCH POINTS: and RED FLAGS:)
             const matchPointsMatch = response.match(/MATCH POINTS:\n((?:•[^\n]+\n?)+)/);
             const matchPoints = matchPointsMatch ? matchPointsMatch[1].trim().split('\n').map(p => p.trim()) : [];
 
-            // Extract red flags (might be bullet points or "None")
             const redFlagsMatch = response.match(/RED FLAGS:\s*([^\n]+(?:\n(?:•[^\n]+))*)/);
             const redFlags = redFlagsMatch ? redFlagsMatch[1].trim() : "None";
 
@@ -153,15 +149,12 @@ Focus on:
         }
     }
 
-    async evaluateTopListing(searchQuery = null) {
+    async evaluateTopListing(searchQuery) {
         await this.db.init();
 
         try {
-            // Use a descriptive name for null search query
-            const searchName = searchQuery || 'Category-based search';
-            
             // Get the search ID
-            const searchId = await this.db.addSearch(searchName);
+            const searchId = await this.db.addSearch(searchQuery);
             
             // Get all listings for this search, ordered by first_seen DESC
             const listings = await this.db.getListingsBySearch(searchId);
@@ -177,24 +170,17 @@ Focus on:
 
             console.log(`\n📊 Processing ${listingsToEvaluate.length} newest listings...`);
 
-            // Evaluate each listing that doesn't have an evaluation yet
+            // Evaluate each listing
             for (const listing of listingsToEvaluate) {
                 console.log(`\n📊 Processing listing: ${listing.title}`);
                 console.log('💰 Price:', listing.price);
                 
-                // Check if evaluation exists
-                const existingEvaluation = await this.db.getEvaluation(listing.id);
-                if (existingEvaluation) {
-                    console.log('   ⏭️  Skipping - evaluation already exists');
-                    continue;
-                }
-
                 console.log('   🤖 Generating new evaluation...');
                 
                 // Evaluate the listing
                 const evaluation = await this.evaluateListing(listing);
                 
-                // Only store valid evaluations
+                // Only store and display valid evaluations
                 if (evaluation) {
                     await this.db.addEvaluation(listing.id, evaluation);
                     
@@ -217,44 +203,9 @@ Focus on:
                     }
                     console.log('\n✅ Evaluation stored in database');
                 }
-                
-                console.log(`\n🎯 Requirements Match Score: ${evaluation.matchScore}/10`);
-                evaluation.matchPoints.forEach(point => console.log(`   • ${point.replace(/^•\s*/, '')}`));
-                
-                if (evaluation.redFlags !== 'None') {
-                    console.log('\n⚠️  Red Flags:');
-                    if (evaluation.redFlags.includes('\n')) {
-                        evaluation.redFlags.split('\n').forEach(flag => 
-                            console.log(`   • ${flag.replace(/^•\s*/, '')}`));
-                    } else {
-                        console.log(`   • ${evaluation.redFlags}`);
-                    }
-                }
-                console.log('\n✅ Evaluation stored in database');
             }
 
             return listingsToEvaluate;
-            console.log('\n📊 Evaluating listing:', topListing.title);
-            console.log('💰 Price:', topListing.price);
-            
-            // Evaluate the listing
-            const evaluation = await this.evaluateListing(topListing);
-            
-            // Store the evaluation in the database
-            await this.db.addEvaluation(topListing.id, evaluation);
-
-            // Print the results
-            console.log('\n🎯 Evaluation Results:');
-            console.log(`💰 Value Score: ${evaluation.valueScore}/10`);
-            console.log('   Reasoning:', evaluation.valueReasoning);
-            console.log(`\n🎯 Requirements Match Score: ${evaluation.matchScore}/10`);
-            console.log('   Reasoning:', evaluation.matchReasoning);
-            if (evaluation.redFlags !== 'None identified') {
-                console.log('\n⚠️  Red Flags:', evaluation.redFlags);
-            }
-            console.log('\n✅ Evaluation stored in database');
-
-            return evaluation;
 
         } catch (error) {
             console.error('Error in evaluateTopListing:', error);
@@ -263,18 +214,6 @@ Focus on:
             await this.db.close();
         }
     }
-}
-
-// If running directly (not imported as a module)
-if (require.main === module) {
-    const searchQuery = process.env.TORI_SEARCH_QUERY;
-    const evaluator = new DealEvaluator();
-    evaluator.evaluateTopListing(searchQuery)
-        .then(() => process.exit(0))
-        .catch(error => {
-            console.error('Fatal error:', error);
-            process.exit(1);
-        });
 }
 
 module.exports = DealEvaluator;
