@@ -6,6 +6,7 @@ const WebGenerator = require('./web_generator.js');
 async function main() {
     const searchQuery = process.env.TORI_SEARCH_QUERY || null;
     const productCategory = process.env.TORI_PRODUCT_CATEGORY || null;
+    const location = process.env.TORI_LOCATION || null;
 
     console.log('🤖 ToriBot starting...');
     if (searchQuery) {
@@ -14,12 +15,15 @@ async function main() {
     if (productCategory) {
         console.log(`📁 Category: "${productCategory}"`);
     }
+    if (location) {
+        console.log(`📍 Location: "${location}"`);
+    }
 
     try {
         // 1. Scrape new listings
         console.log('\n📥 Fetching listings...');
         const scraper = new ToriScraper();
-        await scraper.main(searchQuery, productCategory);
+        await scraper.main(searchQuery, productCategory, location);
 
         // 2. Evaluate new listings
         console.log('\n📊 Evaluating listings...');

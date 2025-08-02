@@ -16,7 +16,7 @@ class ToriScraper {
         this.db = new Database();
     }
 
-    async fetchSearchResults(searchQuery = null, productCategory = null) {
+    async fetchSearchResults(searchQuery = null, productCategory = null, location = null) {
         const params = new URLSearchParams({
             trade_type: '1' // Always filter for selling listings
         });
@@ -29,6 +29,11 @@ class ToriScraper {
         // Add product category only if explicitly provided (not null or empty string)
         if (productCategory?.trim()) {
             params.append('product_category', productCategory.trim());
+        }
+
+        // Add location only if explicitly provided (not null or empty string)
+        if (location?.trim()) {
+            params.append('location', location.trim());
         }
 
         const url = `https://www.tori.fi/recommerce/forsale/search?${params.toString()}`;
@@ -136,7 +141,7 @@ class ToriScraper {
         }
     }
 
-    async main(searchQuery = null, productCategory = null) {
+    async main(searchQuery = null, productCategory = null, location = null) {
         if (!searchQuery?.trim() && !productCategory?.trim()) {
             throw new Error('Either TORI_SEARCH_QUERY or TORI_PRODUCT_CATEGORY must be provided in environment variables');
         }
@@ -144,10 +149,13 @@ class ToriScraper {
         await this.db.init();
 
         try {
-            // Create a consistent search name
-            const searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
+            // Create a consistent search name with optional location
+            let searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
             if (!searchName) {
                 throw new Error('No search query or category provided');
+            }
+            if (location) {
+                searchName += ` in location:${location}`;
             }
             
             // Get search ID first
@@ -155,7 +163,7 @@ class ToriScraper {
             console.log(`🔍 Starting search for "${searchName}" (ID: ${searchId})`);
 
             // Fetch and validate content
-            const html = await this.fetchSearchResults(searchQuery, productCategory);
+            const html = await this.fetchSearchResults(searchQuery, productCategory, location);
             const $ = this.validateContent(html);
 
             // Parse listings
