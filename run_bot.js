@@ -28,7 +28,13 @@ async function main() {
         // 2. Evaluate new listings
         console.log('\n📊 Evaluating listings...');
         const evaluator = new DealEvaluator();
-        const searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
+        
+        // Create the same search name as in scraper
+        let searchName = searchQuery || (productCategory ? `category:${productCategory}` : null);
+        if (location) {
+            searchName += ` in location:${location}`;
+        }
+        
         await evaluator.evaluateTopListing(searchName);
 
         // 3. Generate website
