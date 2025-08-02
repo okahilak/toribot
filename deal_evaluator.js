@@ -130,12 +130,21 @@ Focus on:
             const redFlagsMatch = response.match(/RED FLAGS:\s*([^\n]+(?:\n(?:•[^\n]+))*)/);
             const redFlags = redFlagsMatch ? redFlagsMatch[1].trim() : "None";
 
+            // Check if we got a valid evaluation
+            const valueScore = valueScoreMatch ? parseFloat(valueScoreMatch[1]) : null;
+            const matchScore = matchScoreMatch ? parseFloat(matchScoreMatch[1]) : null;
+
+            if (!valueScore || !matchScore || valuePoints.length === 0 || matchPoints.length === 0) {
+                console.log('   ⏭️  Skipping - invalid or incomplete evaluation');
+                return null;
+            }
+
             return {
-                valueScore: valueScoreMatch ? parseFloat(valueScoreMatch[1]) : null,
-                valuePoints: valuePoints,
-                matchScore: matchScoreMatch ? parseFloat(matchScoreMatch[1]) : null,
-                matchPoints: matchPoints,
-                redFlags: redFlags,
+                valueScore,
+                valuePoints,
+                matchScore,
+                matchPoints,
+                redFlags,
                 fullResponse: response
             };
         } catch (error) {
@@ -185,13 +194,29 @@ Focus on:
                 // Evaluate the listing
                 const evaluation = await this.evaluateListing(listing);
                 
-                // Store the evaluation in the database
-                await this.db.addEvaluation(listing.id, evaluation);
-
-                // Print the results
-                console.log('\n🎯 Evaluation Results:');
-                console.log(`💰 Value Score: ${evaluation.valueScore}/10`);
-                evaluation.valuePoints.forEach(point => console.log(`   • ${point.replace(/^•\s*/, '')}`));
+                // Only store valid evaluations
+                if (evaluation) {
+                    await this.db.addEvaluation(listing.id, evaluation);
+                    
+                    // Print the results
+                    console.log('\n🎯 Evaluation Results:');
+                    console.log(`💰 Value Score: ${evaluation.valueScore}/10`);
+                    evaluation.valuePoints.forEach(point => console.log(`   • ${point.replace(/^•\s*/, '')}`));
+                    
+                    console.log(`\n🎯 Requirements Match Score: ${evaluation.matchScore}/10`);
+                    evaluation.matchPoints.forEach(point => console.log(`   • ${point.replace(/^•\s*/, '')}`));
+                    
+                    if (evaluation.redFlags !== 'None') {
+                        console.log('\n⚠️  Red Flags:');
+                        if (evaluation.redFlags.includes('\n')) {
+                            evaluation.redFlags.split('\n').forEach(flag => 
+                                console.log(`   • ${flag.replace(/^[•⚠️]\s*/, '')}`));
+                        } else {
+                            console.log(`   • ${evaluation.redFlags}`);
+                        }
+                    }
+                    console.log('\n✅ Evaluation stored in database');
+                }
                 
                 console.log(`\n🎯 Requirements Match Score: ${evaluation.matchScore}/10`);
                 evaluation.matchPoints.forEach(point => console.log(`   • ${point.replace(/^•\s*/, '')}`));
